@@ -18,6 +18,7 @@ import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.externalSystem.model.ProjectSystemId;
 import com.intellij.openapi.externalSystem.settings.ExternalProjectSettings;
 import com.intellij.openapi.externalSystem.test.ExternalSystemImportingTestCase;
+import com.intellij.openapi.fileTypes.LanguageFileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.projectRoots.Sdk;
@@ -213,7 +214,7 @@ public abstract class PantsIntegrationTestCase extends ExternalSystemImportingTe
     final PsiClass psiClass = findClassAndAssert(qualifiedName);
     final PsiFile psiFile = psiClass.getContainingFile();
     final PsiParserFacade parserFacade = PsiParserFacade.SERVICE.getInstance(myProject);
-    final PsiComment comment = parserFacade.createBlockCommentFromText(psiFile.getLanguage(), "Foo");
+    final PsiComment comment = parserFacade.createLineCommentFromText((LanguageFileType)psiFile.getFileType(), "Foo");
     WriteCommandAction.runWriteCommandAction(
       myProject,
       new Runnable() {

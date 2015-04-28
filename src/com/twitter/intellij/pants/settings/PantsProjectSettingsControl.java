@@ -5,7 +5,6 @@ package com.twitter.intellij.pants.settings;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.externalSystem.service.settings.AbstractExternalProjectSettingsControl;
-import com.intellij.openapi.externalSystem.service.settings.ExternalSystemSettingsControlCustomizer;
 import com.intellij.openapi.externalSystem.util.ExternalSystemUiUtil;
 import com.intellij.openapi.externalSystem.util.PaintAwarePanel;
 import com.intellij.openapi.options.ConfigurationException;
@@ -36,7 +35,8 @@ public class PantsProjectSettingsControl extends AbstractExternalProjectSettings
   private JBCheckBox myWithDependeesCheckBox;
 
   public PantsProjectSettingsControl(@NotNull PantsProjectSettings settings) {
-    super(null, settings, new ExternalSystemSettingsControlCustomizer(true, true));
+    super(settings);
+    hideUseAutoImportBox();
   }
 
   @Override
