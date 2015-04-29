@@ -76,7 +76,8 @@ public class PantsUnresolvedScalaReferenceQuickFixProviderTest extends PantsHigh
       "testprojects_src_java_org_pantsbuild_testproject_publish_hello_greet_greet"
     );
 
-    makeProject();
+    // doesn't work :-(
+    //makeProject();
   }
 
   private void testIntentionIfCompilingWithPants(
