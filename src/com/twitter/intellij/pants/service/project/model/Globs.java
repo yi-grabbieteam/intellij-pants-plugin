@@ -4,8 +4,8 @@
 package com.twitter.intellij.pants.service.project.model;
 
 import com.intellij.openapi.util.Condition;
+import com.intellij.openapi.util.io.FileUtilRt;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.util.PathUtil;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,7 +32,7 @@ public class Globs {
       new Condition<String>() {
         @Override
         public boolean value(String glob) {
-          return StringUtil.equalsIgnoreCase(extension, PathUtil.getFileExtension(glob));
+          return StringUtil.equalsIgnoreCase(extension, FileUtilRt.getExtension(glob));
         }
       }
     );

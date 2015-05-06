@@ -60,7 +60,7 @@ public class PantsCompileOptionsExecutor {
       try {
         final ProcessOutput processOutput = getProcessOutput(commandLine, null);
         final boolean isIsolated = StringUtil.contains(processOutput.getStdout(), "default: isolated");
-        final List<String> stdoutLines = processOutput.getStdoutLines(true);
+        final List<String> stdoutLines = processOutput.getStdoutLines();
         final int zincLineIndex = ContainerUtil.indexOf(
           stdoutLines,
           new Condition<String>() {
