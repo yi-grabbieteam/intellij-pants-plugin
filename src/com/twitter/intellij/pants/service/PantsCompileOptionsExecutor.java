@@ -10,6 +10,9 @@ import com.intellij.execution.process.ProcessOutput;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.externalSystem.model.ExternalSystemException;
+import com.intellij.openapi.util.AtomicNotNullLazyValue;
+import com.intellij.openapi.util.Condition;
+import com.intellij.openapi.util.NotNullLazyValue;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VfsUtil;
@@ -18,6 +21,7 @@ import com.intellij.util.Function;
 import com.intellij.util.PathUtil;
 import com.intellij.util.containers.ContainerUtil;
 import com.twitter.intellij.pants.PantsBundle;
+import com.twitter.intellij.pants.PantsException;
 import com.twitter.intellij.pants.PantsExecutionException;
 import com.twitter.intellij.pants.model.PantsCompileOptions;
 import com.twitter.intellij.pants.model.PantsExecutionOptions;
@@ -43,6 +47,39 @@ public class PantsCompileOptionsExecutor {
   private final boolean myResolveJars;
   private final boolean myCompileWithIntellij;
   private final List<String> myResolverExtensionClassNames;
+
+  /**
+   *  Add help-default goal to Pants to get all defaults in machine readable format
+   */
+  private final NotNullLazyValue<PantsCompilerOptions> compilerOptions = new AtomicNotNullLazyValue<PantsCompilerOptions>() {
+    @NotNull
+    @Override
+    protected PantsCompilerOptions compute() {
+      final GeneralCommandLine commandLine = PantsUtil.defaultCommandLine(getProjectPath());
+      commandLine.addParameters("help", "compile");
+      try {
+        final ProcessOutput processOutput = getProcessOutput(commandLine, null);
+        final boolean isIsolated = StringUtil.contains(processOutput.getStdout(), "default: isolated");
+        final List<String> stdoutLines = processOutput.getStdoutLines(true);
+        final int zincLineIndex = ContainerUtil.indexOf(
+          stdoutLines,
+          new Condition<String>() {
+            @Override
+            public boolean value(String line) {
+              return StringUtil.contains(line, "compile-zinc-java-enabled");
+            }
+          }
+        );
+        final boolean zincForJava = (zincLineIndex + 1) < stdoutLines.size() &&
+                                    StringUtil.contains(stdoutLines.get(zincLineIndex + 1), "default: True");
+        return new PantsCompilerOptions(isIsolated, zincForJava);
+      }
+      catch (ExecutionException e) {
+        LOG.warn(e);
+        return new PantsCompilerOptions();
+      }
+    }
+  };
 
   @NotNull
   public static PantsCompileOptionsExecutor create(
@@ -136,6 +173,10 @@ public class PantsCompileOptionsExecutor {
 
   public boolean isResolveJars() {
     return myResolveJars;
+  }
+
+  public boolean isCompileWithPants() {
+    return !isCompileWithIntellij();
   }
 
   public boolean isCompileWithIntellij() {
@@ -290,6 +331,18 @@ public class PantsCompileOptionsExecutor {
     getProcessOutput(commandLine, null).checkSuccess(LOG);
   }
 
+  public boolean isCompileWithZincForJava() {
+    return compilerOptions.getValue().isCompileWithZincForJava();
+  }
+
+  public boolean isIsolatedStrategy() {
+    final boolean result = compilerOptions.getValue().isCompileWithIsolatedStrategy();
+    if (!result && ApplicationManager.getApplication().isUnitTestMode() && PantsUtil.isIsolatedStrategyTestFlagEnabled()) {
+      throw new PantsException("Expected to use isolated strategy!");
+    }
+    return result;
+  }
+
   private static class MyPantsCompileOptions implements PantsCompileOptions {
 
     private final String myExternalProjectPath;
@@ -335,6 +388,28 @@ public class PantsCompileOptionsExecutor {
     @Override
     public boolean isWithDependees() {
       return false;
+    }
+  }
+
+  private static class PantsCompilerOptions {
+    private final boolean compileWithIsolatedStrategy;
+    private final boolean compileWithZincForJava;
+
+    private PantsCompilerOptions() {
+      this(false, false);
+    }
+
+    private PantsCompilerOptions(boolean compileWithIsolatedStrategy, boolean compileWithZincForJava) {
+      this.compileWithIsolatedStrategy = compileWithIsolatedStrategy;
+      this.compileWithZincForJava = compileWithZincForJava;
+    }
+
+    public boolean isCompileWithIsolatedStrategy() {
+      return compileWithIsolatedStrategy;
+    }
+
+    public boolean isCompileWithZincForJava() {
+      return compileWithZincForJava;
     }
   }
 }
