@@ -46,6 +46,7 @@ public class PantsCompileOptionsExecutor {
   private final File myWorkingDir;
   private final boolean myResolveJars;
   private final boolean myCompileWithIntellij;
+  private final boolean myResolveSourcesForJars;
   private final List<String> myResolverExtensionClassNames;
 
   /**
@@ -104,7 +105,8 @@ public class PantsCompileOptionsExecutor {
       throw new ExternalSystemException(PantsBundle.message("pants.error.no.pants.executable.by.path", options.getExternalProjectPath()));
     }
     return new PantsCompileOptionsExecutor(
-      workingDir, options, resolveJars,
+      workingDir, options,
+      resolveJars, executionOptions != null && executionOptions.isLibsWithSources(),
       executionOptions != null && executionOptions.isCompileWithIntellij(),
       executionOptions != null ? executionOptions.getResolverExtensionClassNames() : Collections.<String>emptyList()
     );
@@ -117,15 +119,27 @@ public class PantsCompileOptionsExecutor {
       new File(""),
       new MyPantsCompileOptions("", new PantsExecutionSettings()),
       false,
+      true,
       false,
       Collections.<String>emptyList()
-    );
+    ) {
+      @Override
+      public boolean isCompileWithZincForJava() {
+        return false;
+      }
+
+      @Override
+      public boolean isIsolatedStrategy() {
+        return false;
+      }
+    };
   }
 
   private PantsCompileOptionsExecutor(
     @NotNull File workingDir,
     @NotNull PantsCompileOptions compilerOptions,
     boolean resolveJars,
+    boolean resolveSourcesForJars,
     boolean compileWithIntellij,
     @NotNull List<String> resolverExtensionClassNames
   ) {
@@ -134,6 +148,7 @@ public class PantsCompileOptionsExecutor {
     myResolveJars = resolveJars;
     myCompileWithIntellij = compileWithIntellij;
     myResolverExtensionClassNames = resolverExtensionClassNames;
+    myResolveSourcesForJars = resolveSourcesForJars;
   }
 
   public String getProjectRelativePath() {
@@ -259,7 +274,9 @@ public class PantsCompileOptionsExecutor {
     if (myResolveJars || ApplicationManager.getApplication().isUnitTestMode()) {
       commandLine.addParameter("resolve.ivy");
       commandLine.addParameter("--confs=default");
-      commandLine.addParameter("--confs=sources");
+      if (myResolveSourcesForJars) {
+        commandLine.addParameter("--confs=sources");
+      }
       commandLine.addParameter("--soft-excludes");
     }
 
@@ -341,6 +358,10 @@ public class PantsCompileOptionsExecutor {
       throw new PantsException("Expected to use isolated strategy!");
     }
     return result;
+  }
+
+  public String getAbsolutePathFromWorkingDir(@NotNull String relativePath) {
+    return new File(getWorkingDir(), relativePath).getPath();
   }
 
   private static class MyPantsCompileOptions implements PantsCompileOptions {
