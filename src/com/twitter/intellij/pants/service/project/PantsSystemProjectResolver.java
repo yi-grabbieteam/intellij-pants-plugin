@@ -6,6 +6,7 @@ package com.twitter.intellij.pants.service.project;
 import com.intellij.execution.process.ProcessAdapter;
 import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.process.ProcessOutputTypes;
+import com.intellij.externalSystem.JavaProjectData;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.externalSystem.model.DataNode;
@@ -23,9 +24,11 @@ import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil;
 import com.intellij.openapi.module.ModuleTypeId;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.projectRoots.JavaSdkVersion;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.pom.java.LanguageLevel;
 import com.intellij.util.Consumer;
 import com.intellij.util.containers.ContainerUtil;
 import com.twitter.intellij.pants.service.PantsCompileOptionsExecutor;
@@ -78,7 +81,13 @@ public class PantsSystemProjectResolver implements ExternalSystemProjectResolver
       executor.getWorkingDir().getPath() + "/.idea/pants-projects/" + executor.getProjectRelativePath(),
       executor.getProjectPath()
     );
-    final DataNode<ProjectData> projectDataNode = new DataNode<ProjectData> (ProjectKeys.PROJECT, projectData, null);
+    final DataNode<ProjectData> projectDataNode = new DataNode<ProjectData>(ProjectKeys.PROJECT, projectData, null);
+
+    // todo(fkorotkov): get versions from pants.ini
+    final JavaProjectData javaProjectData = new JavaProjectData(PantsConstants.SYSTEM_ID, "");
+    javaProjectData.setJdkVersion(JavaSdkVersion.JDK_1_7);
+    javaProjectData.setLanguageLevel(LanguageLevel.JDK_1_7);
+    projectDataNode.createChild(JavaProjectData.KEY, javaProjectData);
 
     if (!isPreviewMode || ApplicationManager.getApplication().isUnitTestMode()) {
       try {
