@@ -513,11 +513,11 @@ public abstract class PantsIntegrationTestCase extends ExternalSystemImportingTe
     // TODO thread leak either a IJ bug https://youtrack.jetbrains.com/issue/IDEA-155496
     // or a pants plugin bug https://github.com/pantsbuild/intellij-pants-plugin/issues/130
     // Temporarily ignore the following 'leaking' threads to pass CI.
-    ThreadTracker.longRunningThreadCreated(
-      ApplicationManager.getApplication(),
-      "BaseDataReader",
-      "ProcessWaitFor",
-      "Timer");
+    //ThreadTracker.longRunningThreadCreated(
+    //  ApplicationManager.getApplication(),
+    //  "BaseDataReader",
+    //  "ProcessWaitFor",
+    //  "Timer");
     try {
       if (myCompilerTester != null) {
         myCompilerTester.tearDown();
